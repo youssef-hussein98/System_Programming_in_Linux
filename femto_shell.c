@@ -32,41 +32,53 @@ int main(int argc, char *argv[])
 	char buff[BUFF_SIZE] = {0};
 	char *exit_msg = "Good Bye\n";
 	char *error_msg = "Invalid command\n";
+	char *prompt_msg = "Femto Shell > ";
 	int run_app = 1;
 	int read_count = 0;
+	
+	/* make stdin read nonblock */
+	int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
 
 	while (run_app)
 	{
-		print_header();
-		read_count = read(STDIN_FILENO,buff, 5);
-
-		if(strncmp(buff, "exit", 4) == 0) 
+		
+		write(STDOUT_FILENO, prompt_msg, strlen(prompt_msg));
+		do 
 		{
-			
-			write(STDOUT_FILENO, exit_msg, strlen(exit_msg));
+			read_count = read(STDIN_FILENO, buff, BUFF_SIZE);
+		}while(read_count == -1);
+
+		if(strlen(buff) == 1 && buff[strlen(buff) - 1] == '\n') 
+		{
+			continue; // Ignore empty input
+		}
+		else if((strncmp(buff, "exit", 4) == 0) && (buff[4] == '\n' || buff[4] == '\0' || buff[4] == ' ')) 
+		{
+			printf("%s", exit_msg);
 			run_app = 0;
 			continue;
 		}
-		else if(strncmp(buff, "echo", 4) == 0) 
+		else if((strncmp(buff, "echo", 4) == 0) && (buff[4] == '\n' || buff[4] == '\0' || buff[4] == ' '))
 		{
-			do
+			write(STDOUT_FILENO, buff+5, read_count - 5);
+			if(read_count < BUFF_SIZE)
+			 continue; // If no more input, continue to next iteration
+
+			do 
 			{
-				read_count = read(STDIN_FILENO, buff, sizeof(buff));
+				read_count = read(STDIN_FILENO, buff, BUFF_SIZE);
 				write(STDOUT_FILENO, buff, read_count);
-			} while (read_count > 0);
-			continue;
-		}
-		else if((buff[0] == '\n' || buff[0] == '\0') && (read_count ==1)) 
-		{
-			continue; // Ignore empty input
+			}while(read_count == BUFF_SIZE);
 		}
 		else 
 		{
 			write(STDOUT_FILENO, error_msg, strlen(error_msg));
-			while ((buff[read_count - 1] != '\0') && (buff[read_count - 1] != '\n')) 
+			do 
 			{
-				read_count = read(STDIN_FILENO, buff, sizeof(buff));
-			}
+				/* empty stdin */
+				read_count = read(STDIN_FILENO, buff, BUFF_SIZE);
+			}while(read_count == BUFF_SIZE);
 		}
 	}
 
