@@ -17,15 +17,6 @@
 
 #define BUFF_SIZE 100
 
-int print_header(void)
-{
-	char *header = "Femto Shell > ";
-	int write_count = write(STDOUT_FILENO, header, strlen(header));
-	if (write_count != (int)strlen(header)) {
-		return -1;
-	}
-	return 0;
-}
 
 int main(int argc, char *argv[]) 
 {
